@@ -38,26 +38,26 @@ Replace the empty file with agent instructions covering:
 
 New variables required (append to existing file):
 
-| Variable | Type | Description |
-|---|---|---|
-| `github_repo_url` | `string` | Full HTTPS URL of the repo or org, e.g. `https://github.com/org/repo` |
-| `github_runner_token` | `string` (sensitive) | Short-lived registration token from GitHub API |
-| `github_runner_name` | `string` | Display name for the runner (defaults to hostname) |
-| `github_runner_labels` | `list(string)` | Extra labels, e.g. `["self-hosted","linux","proxmox"]` |
-| `github_runner_user` | `string` | OS user that runs the runner service (defaults to `runner`) |
-| `github_runner_version` | `string` | Runner binary version to download, e.g. `2.316.1` |
+| Variable                | Type                 | Description                                                           |
+| ----------------------- | -------------------- | --------------------------------------------------------------------- |
+| `github_repo_url`       | `string`             | Full HTTPS URL of the repo or org, e.g. `https://github.com/org/repo` |
+| `github_runner_token`   | `string` (sensitive) | Short-lived registration token from GitHub API                        |
+| `github_runner_name`    | `string`             | Display name for the runner (defaults to hostname)                    |
+| `github_runner_labels`  | `list(string)`       | Extra labels, e.g. `["self-hosted","linux","proxmox"]`                |
+| `github_runner_user`    | `string`             | OS user that runs the runner service (defaults to `runner`)           |
+| `github_runner_version` | `string`             | Runner binary version to download, e.g. `2.316.1`                     |
 
 Tune existing defaults for a runner workload:
 
-| Variable | New default |
-|---|---|
-| `cpu_cores` | `2` |
-| `memory_mb` | `2048` |
-| `swap_mb` | `1024` |
-| `disk_size` | `20` |
-| `os_type` | `ubuntu` |
-| `nesting` | `true` |
-| `start_on_boot` | `true` |
+| Variable        | New default |
+| --------------- | ----------- |
+| `cpu_cores`     | `2`         |
+| `memory_mb`     | `2048`      |
+| `swap_mb`       | `1024`      |
+| `disk_size`     | `20`        |
+| `os_type`       | `ubuntu`    |
+| `nesting`       | `true`      |
+| `start_on_boot` | `true`      |
 
 ---
 
@@ -111,11 +111,11 @@ runner token so re-registration is possible by changing the token.
 
 ## 5 — outputs.tf additions
 
-| Output | Value |
-|---|---|
-| `runner_ip` | Static IP of the container |
-| `runner_name` | `var.github_runner_name` |
-| `runner_labels` | `var.github_runner_labels` |
+| Output           | Value                         |
+| ---------------- | ----------------------------- |
+| `runner_ip`      | Static IP of the container    |
+| `runner_name`    | `var.github_runner_name`      |
+| `runner_labels`  | `var.github_runner_labels`    |
 | `ssh_connection` | `ssh root@<ip>` helper string |
 
 ---
@@ -145,9 +145,9 @@ Sections:
 
 ## Open decisions (resolve before implementation)
 
-| # | Question | Options |
-|---|---|---|
-| 1 | Repo-level or org-level runner? | Repo runner (simpler token) vs org runner (shared) |
-| 2 | Docker support needed? | Yes → add nesting + docker install; No → skip |
-| 3 | Runner token delivery method | Manual env var vs GitHub API call inside provisioner using a PAT |
-| 4 | Multiple runners? | Single container now; count/for_each later if needed |
+| #   | Question                        | Options                                                          |
+| --- | ------------------------------- | ---------------------------------------------------------------- |
+| 1   | Repo-level or org-level runner? | Repo runner (simpler token) vs org runner (shared)               |
+| 2   | Docker support needed?          | Yes → add nesting + docker install; No → skip                    |
+| 3   | Runner token delivery method    | Manual env var vs GitHub API call inside provisioner using a PAT |
+| 4   | Multiple runners?               | Single container now; count/for_each later if needed             |
