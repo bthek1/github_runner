@@ -220,6 +220,7 @@ __marimo__/
 # Terraform
 *.tfstate
 *.tfstate.backup
+*.tfstate.*.backup
 *.tfstate.lock.info
 *.tfvars
 !*.tfvars.example
