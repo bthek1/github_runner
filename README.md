@@ -7,14 +7,44 @@ register a GitHub Actions self-hosted runner inside it.
 
 ## Prerequisites
 
-- Proxmox host with the bpg/proxmox provider accessible via API token
+- Proxmox VE 7.x or 8.x with the bpg/proxmox provider accessible via API token or username/password
+- Terraform ≥ 1.5
 - SSH key at `~/.ssh/id_ed25519` injected into the container's root account
 - GitHub PAT with `repo` scope (to generate a runner registration token)
 - Ubuntu 24.04 LXC template present in Proxmox local storage
+- `gh` CLI (optional, for one-step token generation)
+
+---
+
+## Credentials — `.envrc`
+
+Copy your Proxmox credentials into `.envrc` (already gitignored) and source it before any Terraform command:
+
+```bash
+# .envrc
+export TF_VAR_proxmox_endpoint="https://192.168.2.70:8006/"
+export TF_VAR_proxmox_username="root@pam"
+export TF_VAR_proxmox_password="<password>"
+# or use an API token instead:
+# export TF_VAR_proxmox_api_token="user@pam!token-id=<uuid>"
+```
+
+```bash
+source .envrc
+```
 
 ---
 
 ## How to get a runner registration token
+
+**GitHub CLI (recommended):**
+
+```bash
+gh api --method POST \
+  -H "Accept: application/vnd.github+json" \
+  /repos/<owner>/<repo>/actions/runners/registration-token \
+  --jq '.token'
+```
 
 **GitHub UI:**
 
@@ -35,33 +65,62 @@ Tokens expire after **1 hour** — generate one immediately before running `terr
 
 ---
 
-## Secrets / environment variables
-
-Export these before running any Terraform command:
-
-```bash
-export TF_VAR_proxmox_endpoint="https://proxmox.local:8006/"
-export TF_VAR_proxmox_api_token="user@pam!token-id=<uuid>"
-export TF_VAR_github_runner_token="<short-lived token from above>"
-```
-
-Never put these values in `terraform.tfvars` or any committed file.
-
----
-
 ## Deploy
 
 ```bash
+# 1. Source Proxmox credentials
+source .envrc
+
+# 2. Generate a fresh runner token and export it
+export TF_VAR_github_runner_token=$(gh api --method POST \
+  -H "Accept: application/vnd.github+json" \
+  /repos/<owner>/<repo>/actions/runners/registration-token \
+  --jq '.token')
+
+# 3. Deploy with just (recommended)
+just deploy
+
+# Or manually
 cd terraform/lxc
-
 terraform init
-
 terraform plan
-
 terraform apply
 ```
 
-Edit `terraform.tfvars` first to set `github_repo_url` to your repository URL.
+Edit `terraform.tfvars` first (copy from `terraform.tfvars.example`) to set your
+`github_repo_url`, container ID, IP address, and other values.
+
+---
+
+## Key variables (`terraform.tfvars`)
+
+| Variable | Description | Default |
+|---|---|---|
+| `container_id` | Proxmox VMID | — |
+| `container_hostname` | Container hostname | — |
+| `network_ip` | Static IP in CIDR or `dhcp` | `dhcp` |
+| `network_gateway` | Default gateway (static only) | `""` |
+| `github_repo_url` | Full repo URL to register runner against | — |
+| `github_runner_name` | Display name in GitHub UI | `proxmox-lxc-runner` |
+| `github_runner_labels` | Runner labels list | `["self-hosted","linux","proxmox"]` |
+| `github_runner_user` | OS user that runs the service | `runner` |
+| `github_runner_version` | Runner binary version | `2.316.1` |
+
+---
+
+## Just recipes
+
+```bash
+just init        # terraform init
+just plan        # terraform plan
+just apply       # terraform apply (interactive)
+just apply-auto  # terraform apply -auto-approve
+just deploy      # init → validate → apply-auto
+just destroy     # terraform destroy
+just show        # terraform show
+just output      # terraform output
+just fmt         # format all .tf files
+```
 
 ---
 
@@ -76,7 +135,7 @@ It should show as **Idle** with the labels defined in `github_runner_labels`.
 You can also SSH in to check the service status:
 
 ```bash
-ssh root@$(terraform output -raw runner_ip)
+ssh root@$(cd terraform/lxc && terraform output -raw runner_ip)
 systemctl status "actions.runner.*"
 ```
 
@@ -85,7 +144,7 @@ systemctl status "actions.runner.*"
 ## Destroy
 
 ```bash
-terraform destroy
+just destroy
 ```
 
 This tears down the LXC container. The runner will appear offline in GitHub —
@@ -98,5 +157,5 @@ remove it manually from Settings → Actions → Runners if needed.
 If the runner token expires or you need to re-register:
 
 1. Generate a new token (see above)
-2. Export `TF_VAR_github_runner_token="<new token>"`
-3. Run `terraform apply` — the `null_resource` triggers on token change and re-runs the install provisioner
+2. `export TF_VAR_github_runner_token="<new token>"`
+3. Run `just apply` — the `null_resource` triggers on token change and re-runs the install provisioner

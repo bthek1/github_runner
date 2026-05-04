@@ -83,7 +83,7 @@ resource "null_resource" "github_runner" {
   depends_on = [proxmox_virtual_environment_container.lxc]
 
   triggers = {
-    runner_token = var.github_runner_token
+    runner_tokens = var.github_runner_tokens
   }
 
   connection {
@@ -106,18 +106,27 @@ resource "null_resource" "github_runner" {
       # Create runner OS user
       "id ${var.github_runner_user} >/dev/null 2>&1 || useradd -m -s /bin/bash ${var.github_runner_user}",
 
-      # Download and extract runner
-      "mkdir -p /home/${var.github_runner_user}/actions-runner",
-      "cd /home/${var.github_runner_user}/actions-runner && curl -fsSL -o runner.tar.gz https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
-      "cd /home/${var.github_runner_user}/actions-runner && tar xzf runner.tar.gz && rm runner.tar.gz",
-      "chown -R ${var.github_runner_user}:${var.github_runner_user} /home/${var.github_runner_user}/actions-runner",
+      # Download runner binary once into a staging directory
+      "mkdir -p /home/${var.github_runner_user}/runner-src",
+      "curl -fsSL -o /home/${var.github_runner_user}/runner-src/runner.tar.gz https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
 
-      # Configure runner (unattended)
-      "cd /home/${var.github_runner_user}/actions-runner && sudo -u ${var.github_runner_user} ./config.sh --unattended --url ${var.github_repo_url} --token ${var.github_runner_token} --name ${var.github_runner_name} --labels ${join(",", var.github_runner_labels)} --replace",
+      # Configure one runner instance per target (POSIX-compatible loop)
+      "TARGETS='${join(",", var.github_runner_targets)}'",
+      "TOKENS='${var.github_runner_tokens}'",
+      "i=0",
+      "for target in $(printf '%s' \"$TARGETS\" | tr ',' ' '); do",
+      "  token=$(printf '%s' \"$TOKENS\" | cut -d, -f$((i+1)))",
+      "  dir=/home/${var.github_runner_user}/actions-runner-$i",
+      "  mkdir -p \"$dir\"",
+      "  cd \"$dir\" && tar xzf /home/${var.github_runner_user}/runner-src/runner.tar.gz",
+      "  chown -R ${var.github_runner_user}:${var.github_runner_user} \"$dir\"",
+      "  sudo -u ${var.github_runner_user} ./config.sh --unattended --url \"$target\" --token \"$token\" --name ${var.github_runner_name}-$i --labels '${join(",", var.github_runner_labels)}' --replace",
+      "  ./svc.sh install ${var.github_runner_user}",
+      "  i=$((i+1))",
+      "done",
 
-      # Install and start systemd service
-      "cd /home/${var.github_runner_user}/actions-runner && ./svc.sh install ${var.github_runner_user}",
-      "systemctl enable --now $(systemctl list-unit-files | grep actions.runner | awk '{print $1}' | head -1)",
+      # Enable and start all installed runner services
+      "systemctl enable --now $(systemctl list-unit-files | grep actions.runner | awk '{print $1}')",
     ]
   }
 }

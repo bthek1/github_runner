@@ -185,13 +185,13 @@ variable "nesting" {
 
 # ── GitHub Runner ─────────────────────────────────────────────────────────────
 
-variable "github_repo_url" {
-  description = "Full HTTPS URL of the GitHub repo or org, e.g. https://github.com/org/repo."
-  type        = string
+variable "github_runner_targets" {
+  description = "List of GitHub org or repo URLs the runner will register with. Use org URLs (https://github.com/org) to share across all repos in that org."
+  type        = list(string)
 }
 
-variable "github_runner_token" {
-  description = "Short-lived registration token from the GitHub API (expires in 1 hour)."
+variable "github_runner_tokens" {
+  description = "Comma-separated registration tokens, one per target URL in github_runner_targets order (expires in 1 hour)."
   type        = string
   sensitive   = true
 }

@@ -32,3 +32,26 @@ network_ip     = "dhcp"
 start_on_create = true
 start_on_boot   = false
 unprivileged    = true
+nesting         = true
+
+# ── GitHub Runner ─────────────────────────────────────────────────────────────
+
+# List of GitHub org or repo URLs to register the runner with.
+# Use org URL (https://github.com/org) for access to all repos in that org.
+github_runner_targets = [
+  "https://github.com/<org1>",
+  # "https://github.com/<org2>",
+]
+
+# Tokens are injected via TF_VAR_github_runner_tokens — never store here.
+# Generate one token per target in the same order, comma-separated:
+# export TF_VAR_github_runner_tokens="$(
+#   gh api --method POST -H 'Accept: application/vnd.github+json' \
+#     /orgs/<org1>/actions/runners/registration-token --jq '.token'
+# ),$(gh api --method POST -H 'Accept: application/vnd.github+json' \
+#     /orgs/<org2>/actions/runners/registration-token --jq '.token')"
+
+github_runner_name    = "proxmox-lxc-runner"
+github_runner_labels  = ["self-hosted", "linux", "proxmox"]
+github_runner_user    = "runner"
+github_runner_version = "2.316.1"
