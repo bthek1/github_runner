@@ -114,6 +114,11 @@ resource "null_resource" "github_runner" {
       "TARGETS='${join(",", var.github_runner_targets)}'",
       "TOKENS='${var.github_runner_tokens}'",
       "PARALLEL=${var.github_runner_parallel}",
+
+      # Stop and remove ALL existing runner services and directories before re-provisioning
+      "for svc in $(systemctl list-unit-files | grep actions.runner | awk '{print $1}'); do systemctl stop \"$svc\" 2>/dev/null || true; done",
+      "for dir in /home/${var.github_runner_user}/actions-runner*; do [ -d \"$dir\" ] && (cd \"$dir\" && sudo -u ${var.github_runner_user} ./config.sh remove --unattended 2>/dev/null || true) && rm -rf \"$dir\"; done",
+
       "i=0",
       "for target in $(printf '%s' \"$TARGETS\" | tr ',' ' '); do",
       "  token=$(printf '%s' \"$TOKENS\" | cut -d, -f$((i+1)))",
