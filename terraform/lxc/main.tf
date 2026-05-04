@@ -96,6 +96,9 @@ resource "null_resource" "github_runner" {
 
   provisioner "remote-exec" {
     inline = [
+      # Fix DNS (LXC containers may not inherit host resolver)
+      "printf 'nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf",
+
       # Dependencies
       "apt-get update -qq",
       "apt-get install -y -qq curl git jq libssl-dev",
