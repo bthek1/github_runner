@@ -101,7 +101,7 @@ resource "null_resource" "github_runner" {
 
       # Dependencies
       "apt-get update -qq",
-      "apt-get install -y -qq curl git jq libssl-dev",
+      "apt-get install -y -qq curl git jq libssl-dev libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info fonts-liberation",
 
       # Create runner OS user
       "id ${var.github_runner_user} >/dev/null 2>&1 || useradd -m -s /bin/bash ${var.github_runner_user}",
@@ -110,18 +110,24 @@ resource "null_resource" "github_runner" {
       "mkdir -p /home/${var.github_runner_user}/runner-src",
       "curl -fsSL -o /home/${var.github_runner_user}/runner-src/runner.tar.gz https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
 
-      # Configure one runner instance per target (POSIX-compatible loop)
+      # Configure parallel runner instances per target (POSIX-compatible nested loop)
       "TARGETS='${join(",", var.github_runner_targets)}'",
       "TOKENS='${var.github_runner_tokens}'",
+      "PARALLEL=${var.github_runner_parallel}",
       "i=0",
       "for target in $(printf '%s' \"$TARGETS\" | tr ',' ' '); do",
       "  token=$(printf '%s' \"$TOKENS\" | cut -d, -f$((i+1)))",
-      "  dir=/home/${var.github_runner_user}/actions-runner-$i",
-      "  mkdir -p \"$dir\"",
-      "  cd \"$dir\" && tar xzf /home/${var.github_runner_user}/runner-src/runner.tar.gz",
-      "  chown -R ${var.github_runner_user}:${var.github_runner_user} \"$dir\"",
-      "  sudo -u ${var.github_runner_user} ./config.sh --unattended --url \"$target\" --token \"$token\" --name ${var.github_runner_name}-$i --labels '${join(",", var.github_runner_labels)}' --replace",
-      "  ./svc.sh install ${var.github_runner_user}",
+      "  j=0",
+      "  while [ \"$j\" -lt \"$PARALLEL\" ]; do",
+      "    idx=$((i * PARALLEL + j))",
+      "    dir=/home/${var.github_runner_user}/actions-runner-$idx",
+      "    mkdir -p \"$dir\"",
+      "    cd \"$dir\" && tar xzf /home/${var.github_runner_user}/runner-src/runner.tar.gz",
+      "    chown -R ${var.github_runner_user}:${var.github_runner_user} \"$dir\"",
+      "    sudo -u ${var.github_runner_user} ./config.sh --unattended --url \"$target\" --token \"$token\" --name ${var.github_runner_name}-$idx --labels '${join(",", var.github_runner_labels)}' --replace",
+      "    ./svc.sh install ${var.github_runner_user}",
+      "    j=$((j+1))",
+      "  done",
       "  i=$((i+1))",
       "done",
 

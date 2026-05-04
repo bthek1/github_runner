@@ -61,7 +61,7 @@ export TF_VAR_github_runner_tokens="$(
     /repos/bthek1/github_runner/actions/runners/registration-token --jq '.token'
 ),$(
   gh api --method POST -H "Accept: application/vnd.github+json" \
-    /orgs/Recovery-Metrics/actions/runners/registration-token --jq '.token'
+    /repos/Recovery-Metrics/RM_DRF_Project/actions/runners/registration-token --jq '.token'
 )"
 terraform -chdir=terraform/lxc apply
 ```

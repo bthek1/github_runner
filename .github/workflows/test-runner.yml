@@ -7,13 +7,17 @@ on:
       - main
 
 jobs:
-  test-runner:
-    name: Verify runner is online
+  # Run 4 parallel jobs to demonstrate 4 concurrent runners
+  parallel-job:
+    name: "Parallel job ${{ matrix.index }}"
     runs-on:
       - self-hosted
       - linux
       - proxmox
       - ubuntu-24.04
+    strategy:
+      matrix:
+        index: [1, 2, 3, 4]
 
     steps:
       - name: Checkout
@@ -21,15 +25,36 @@ jobs:
 
       - name: Runner info
         run: |
-          echo "Hostname: $(hostname)"
-          echo "User: $(whoami)"
-          echo "OS: $(uname -a)"
-          echo "CPU cores: $(nproc)"
-          echo "Memory: $(free -h | awk '/^Mem:/{print $2}')"
-          echo "Disk: $(df -h / | awk 'NR==2{print $4}') free"
+          echo "=== Job ${{ matrix.index }} of 4 ==="
+          echo "Runner name:  $RUNNER_NAME"
+          echo "Hostname:     $(hostname)"
+          echo "User:         $(whoami)"
+          echo "OS:           $(uname -r)"
+          echo "CPU cores:    $(nproc)"
+          echo "Memory:       $(free -h | awk '/^Mem:/{print $2}')"
+          echo "Disk free:    $(df -h / | awk 'NR==2{print $4}')"
 
       - name: Python check
         run: python3 --version
 
+      - name: Simulate work
+        run: |
+          echo "Job ${{ matrix.index }} working..."
+          sleep 5
+          echo "Job ${{ matrix.index }} done"
+
       - name: Network connectivity
         run: curl -sf https://github.com > /dev/null && echo "GitHub reachable"
+
+  # Summary job that waits for all parallel jobs
+  summary:
+    name: All runners completed
+    needs: parallel-job
+    runs-on:
+      - self-hosted
+      - linux
+      - proxmox
+      - ubuntu-24.04
+    steps:
+      - name: Summary
+        run: echo "All 4 parallel jobs completed successfully on runner $RUNNER_NAME"

@@ -219,3 +219,9 @@ variable "github_runner_version" {
   type        = string
   default     = "2.316.1"
 }
+
+variable "github_runner_parallel" {
+  description = "Number of parallel runner instances to register per target (enables concurrent job execution)."
+  type        = number
+  default     = 2
+}
