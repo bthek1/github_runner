@@ -58,7 +58,7 @@ string via `TF_VAR_github_runner_tokens`:
 source .envrc
 export TF_VAR_github_runner_tokens="$(
   gh api --method POST -H "Accept: application/vnd.github+json" \
-    /orgs/bthek1/actions/runners/registration-token --jq '.token'
+    /repos/bthek1/github_runner/actions/runners/registration-token --jq '.token'
 ),$(
   gh api --method POST -H "Accept: application/vnd.github+json" \
     /orgs/Recovery-Metrics/actions/runners/registration-token --jq '.token'
