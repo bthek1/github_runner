@@ -94,17 +94,17 @@ Edit `terraform.tfvars` first (copy from `terraform.tfvars.example`) to set your
 
 ## Key variables (`terraform.tfvars`)
 
-| Variable | Description | Default |
-|---|---|---|
-| `container_id` | Proxmox VMID | — |
-| `container_hostname` | Container hostname | — |
-| `network_ip` | Static IP in CIDR or `dhcp` | `dhcp` |
-| `network_gateway` | Default gateway (static only) | `""` |
-| `github_repo_url` | Full repo URL to register runner against | — |
-| `github_runner_name` | Display name in GitHub UI | `proxmox-lxc-runner` |
-| `github_runner_labels` | Runner labels list | `["self-hosted","linux","proxmox"]` |
-| `github_runner_user` | OS user that runs the service | `runner` |
-| `github_runner_version` | Runner binary version | `2.316.1` |
+| Variable                | Description                              | Default                             |
+| ----------------------- | ---------------------------------------- | ----------------------------------- |
+| `container_id`          | Proxmox VMID                             | —                                   |
+| `container_hostname`    | Container hostname                       | —                                   |
+| `network_ip`            | Static IP in CIDR or `dhcp`              | `dhcp`                              |
+| `network_gateway`       | Default gateway (static only)            | `""`                                |
+| `github_repo_url`       | Full repo URL to register runner against | —                                   |
+| `github_runner_name`    | Display name in GitHub UI                | `proxmox-lxc-runner`                |
+| `github_runner_labels`  | Runner labels list                       | `["self-hosted","linux","proxmox"]` |
+| `github_runner_user`    | OS user that runs the service            | `runner`                            |
+| `github_runner_version` | Runner binary version                    | `2.316.1`                           |
 
 ---
 
