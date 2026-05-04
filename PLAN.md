@@ -12,12 +12,13 @@ updated to be specific to this use case.
 
 ## Update order
 
-1. **AGENTS.md** — rewrite AI agent instructions for this project
-2. **terraform/lxc/variables.tf** — add GitHub runner variables; tune defaults
-3. **terraform/lxc/terraform.tfvars** — set runner-appropriate values (resources, ID, hostname, tags)
-4. **terraform/lxc/main.tf** — add `remote-exec` provisioner to install and register the runner
-5. **terraform/lxc/outputs.tf** — expose runner-relevant outputs
-6. **README.md** — document the project end-to-end
+1. ✅ **AGENTS.md** — rewrite AI agent instructions for this project
+2. ✅ **pyproject.toml** — rename project from `proxmox-terraform` → `github_runner`; update description
+3. ✅ **terraform/lxc/variables.tf** — add GitHub runner variables; tune defaults
+4. ✅ **terraform/lxc/terraform.tfvars** — set runner-appropriate values (resources, ID, hostname, tags)
+5. ✅ **terraform/lxc/main.tf** — add `remote-exec` provisioner to install and register the runner
+6. ✅ **terraform/lxc/outputs.tf** — expose runner-relevant outputs
+7. ✅ **README.md** — document the project end-to-end
 
 ---
 
@@ -34,7 +35,23 @@ Replace the empty file with agent instructions covering:
 
 ---
 
-## 2 — variables.tf additions
+## 2 — pyproject.toml
+
+Change the stale copied values:
+
+```toml
+[project]
+name = "github_runner"
+version = "0.1.0"
+description = "Terraform + Proxmox LXC self-hosted GitHub Actions runner"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+```
+
+---
+
+## 3 — variables.tf additions
 
 New variables required (append to existing file):
 
@@ -61,7 +78,7 @@ Tune existing defaults for a runner workload:
 
 ---
 
-## 3 — terraform.tfvars
+## 4 — terraform.tfvars
 
 Changes needed:
 
@@ -89,7 +106,7 @@ github_runner_version = "2.316.1"
 
 ---
 
-## 4 — main.tf provisioner
+## 5 — main.tf provisioner
 
 After the container is up, a `remote-exec` provisioner (on the `null_resource`)
 installs dependencies and the runner:
@@ -109,7 +126,7 @@ runner token so re-registration is possible by changing the token.
 
 ---
 
-## 5 — outputs.tf additions
+## 6 — outputs.tf additions
 
 | Output           | Value                         |
 | ---------------- | ----------------------------- |
@@ -120,7 +137,7 @@ runner token so re-registration is possible by changing the token.
 
 ---
 
-## 6 — README.md
+## 7 — README.md
 
 Sections:
 
@@ -143,11 +160,11 @@ Sections:
 
 ---
 
-## Open decisions (resolve before implementation)
+## Open decisions
 
-| #   | Question                        | Options                                                          |
+| #   | Question                        | Decision                                                         |
 | --- | ------------------------------- | ---------------------------------------------------------------- |
-| 1   | Repo-level or org-level runner? | Repo runner (simpler token) vs org runner (shared)               |
-| 2   | Docker support needed?          | Yes → add nesting + docker install; No → skip                    |
-| 3   | Runner token delivery method    | Manual env var vs GitHub API call inside provisioner using a PAT |
-| 4   | Multiple runners?               | Single container now; count/for_each later if needed             |
+| 1   | Repo-level or org-level runner? | ✅ Repo-level — `https://github.com/bthek1/github_runner`        |
+| 2   | Docker support needed?          | ✅ No — skipped; nesting enabled for systemd only                |
+| 3   | Runner token delivery method    | ✅ Manual env var `TF_VAR_github_runner_token`                   |
+| 4   | Multiple runners?               | ✅ Single container for now                                      |

@@ -1,7 +1,7 @@
 [project]
-name = "proxmox-terraform"
+name = "github_runner"
 version = "0.1.0"
-description = "Add your description here"
+description = "Terraform + Proxmox LXC self-hosted GitHub Actions runner"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []

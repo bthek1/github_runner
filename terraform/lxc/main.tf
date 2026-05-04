@@ -65,7 +65,7 @@ resource "null_resource" "extra_user" {
 
   connection {
     type        = "ssh"
-    host        = replace(var.network_ip, "/24", "")
+    host        = split("/", var.network_ip)[0]
     user        = "root"
     private_key = file("~/.ssh/id_ed25519")
     timeout     = "120s"
@@ -75,6 +75,46 @@ resource "null_resource" "extra_user" {
     inline = [
       "id ${var.extra_username} >/dev/null 2>&1 || useradd -m -s /bin/bash ${var.extra_username}",
       "printf '%s:%s' '${var.extra_username}' '${var.extra_user_password}' | chpasswd",
+    ]
+  }
+}
+
+resource "null_resource" "github_runner" {
+  depends_on = [proxmox_virtual_environment_container.lxc]
+
+  triggers = {
+    runner_token = var.github_runner_token
+  }
+
+  connection {
+    type        = "ssh"
+    host        = split("/", var.network_ip)[0]
+    user        = "root"
+    private_key = file("~/.ssh/id_ed25519")
+    timeout     = "300s"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      # Dependencies
+      "apt-get update -qq",
+      "apt-get install -y -qq curl git jq libssl-dev",
+
+      # Create runner OS user
+      "id ${var.github_runner_user} >/dev/null 2>&1 || useradd -m -s /bin/bash ${var.github_runner_user}",
+
+      # Download and extract runner
+      "mkdir -p /home/${var.github_runner_user}/actions-runner",
+      "cd /home/${var.github_runner_user}/actions-runner && curl -fsSL -o runner.tar.gz https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
+      "cd /home/${var.github_runner_user}/actions-runner && tar xzf runner.tar.gz && rm runner.tar.gz",
+      "chown -R ${var.github_runner_user}:${var.github_runner_user} /home/${var.github_runner_user}/actions-runner",
+
+      # Configure runner (unattended)
+      "cd /home/${var.github_runner_user}/actions-runner && sudo -u ${var.github_runner_user} ./config.sh --unattended --url ${var.github_repo_url} --token ${var.github_runner_token} --name ${var.github_runner_name} --labels ${join(",", var.github_runner_labels)} --replace",
+
+      # Install and start systemd service
+      "cd /home/${var.github_runner_user}/actions-runner && ./svc.sh install ${var.github_runner_user}",
+      "systemctl enable --now $(systemctl list-unit-files | grep actions.runner | awk '{print $1}' | head -1)",
     ]
   }
 }

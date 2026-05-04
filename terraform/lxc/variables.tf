@@ -74,7 +74,7 @@ variable "template_file_id" {
 variable "os_type" {
   description = "OS type hint for Proxmox (unmanaged, ubuntu, debian, fedora, etc.)."
   type        = string
-  default     = "unmanaged"
+  default     = "ubuntu"
 }
 
 # ── Resources ────────────────────────────────────────────────────────────────
@@ -82,19 +82,19 @@ variable "os_type" {
 variable "cpu_cores" {
   description = "Number of CPU cores."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "memory_mb" {
   description = "RAM in megabytes."
   type        = number
-  default     = 512
+  default     = 2048
 }
 
 variable "swap_mb" {
   description = "Swap in megabytes."
   type        = number
-  default     = 512
+  default     = 1024
 }
 
 # ── Disk ─────────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ variable "swap_mb" {
 variable "disk_size" {
   description = "Root filesystem size in GB."
   type        = number
-  default     = 8
+  default     = 20
 }
 
 variable "datastore_id" {
@@ -168,7 +168,7 @@ variable "start_on_create" {
 variable "start_on_boot" {
   description = "Start the container automatically when the Proxmox node boots."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "unprivileged" {
@@ -180,5 +180,42 @@ variable "unprivileged" {
 variable "nesting" {
   description = "Enable nesting support (required for systemd 255+ inside the container)."
   type        = bool
-  default     = false
+  default     = true
+}
+
+# ── GitHub Runner ─────────────────────────────────────────────────────────────
+
+variable "github_repo_url" {
+  description = "Full HTTPS URL of the GitHub repo or org, e.g. https://github.com/org/repo."
+  type        = string
+}
+
+variable "github_runner_token" {
+  description = "Short-lived registration token from the GitHub API (expires in 1 hour)."
+  type        = string
+  sensitive   = true
+}
+
+variable "github_runner_name" {
+  description = "Display name for the runner shown in the GitHub UI."
+  type        = string
+  default     = "proxmox-lxc-runner"
+}
+
+variable "github_runner_labels" {
+  description = "Extra labels to attach to the runner, e.g. [\"self-hosted\", \"linux\", \"proxmox\"]."
+  type        = list(string)
+  default     = ["self-hosted", "linux", "proxmox"]
+}
+
+variable "github_runner_user" {
+  description = "OS user that runs the runner service."
+  type        = string
+  default     = "runner"
+}
+
+variable "github_runner_version" {
+  description = "GitHub Actions runner binary version to download, e.g. 2.316.1."
+  type        = string
+  default     = "2.316.1"
 }
