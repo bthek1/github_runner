@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  # Run 4 parallel jobs to demonstrate 4 concurrent runners
+  # Run 2 parallel jobs to demonstrate 2 concurrent runners
   parallel-job:
     name: "Parallel job ${{ matrix.index }}"
     runs-on:
@@ -17,7 +17,7 @@ jobs:
       - ubuntu-24.04
     strategy:
       matrix:
-        index: [1, 2, 3, 4]
+        index: [1, 2]
 
     steps:
       - name: Checkout
@@ -25,7 +25,7 @@ jobs:
 
       - name: Runner info
         run: |
-          echo "=== Job ${{ matrix.index }} of 4 ==="
+          echo "=== Job ${{ matrix.index }} of 2 ==="
           echo "Runner name:  $RUNNER_NAME"
           echo "Hostname:     $(hostname)"
           echo "User:         $(whoami)"
@@ -46,7 +46,7 @@ jobs:
       - name: Network connectivity
         run: curl -sf https://github.com > /dev/null && echo "GitHub reachable"
 
-  # Summary job that waits for all parallel jobs
+  # Summary job that waits for both parallel jobs
   summary:
     name: All runners completed
     needs: parallel-job
@@ -57,4 +57,4 @@ jobs:
       - ubuntu-24.04
     steps:
       - name: Summary
-        run: echo "All 4 parallel jobs completed successfully on runner $RUNNER_NAME"
+        run: echo "All 2 parallel jobs completed successfully on runner $RUNNER_NAME"
