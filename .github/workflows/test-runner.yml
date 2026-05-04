@@ -1,0 +1,35 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-runner:
+    name: Verify runner is online
+    runs-on:
+      - self-hosted
+      - linux
+      - proxmox
+      - ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Runner info
+        run: |
+          echo "Hostname: $(hostname)"
+          echo "User: $(whoami)"
+          echo "OS: $(uname -a)"
+          echo "CPU cores: $(nproc)"
+          echo "Memory: $(free -h | awk '/^Mem:/{print $2}')"
+          echo "Disk: $(df -h / | awk 'NR==2{print $4}') free"
+
+      - name: Python check
+        run: python3 --version
+
+      - name: Network connectivity
+        run: curl -sf https://github.com > /dev/null && echo "GitHub reachable"
