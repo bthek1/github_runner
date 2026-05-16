@@ -1,0 +1,120 @@
+# Incident: GitHub Actions Runner DNS Outage
+
+**Date:** 2026-05-14  
+**Duration:** ~1.5 days (since 2026-05-13 ~06:09 UTC)  
+**Severity:** High — all GitHub Actions jobs blocked  
+**Status:** Resolved
+
+---
+
+## Summary
+
+All four self-hosted GitHub Actions runners on the Proxmox LXC container (`gh-runner`, ID 111, `192.168.2.101`) were running but unable to connect to GitHub. Jobs queued but never executed. The root cause was a broken DNS configuration: Proxmox had written `nameserver 10.8.0.1` into `/etc/resolv.conf` on the container, pointing to a WireGuard VPN DNS server that was unreachable from the container network.
+
+---
+
+## Timeline
+
+| Time (UTC)       | Event                                                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-13 05:59 | All 4 runner services started (container boot or restart)                                                                                    |
+| 2026-05-13 06:09 | First DNS-related connection errors logged: `Resource temporarily unavailable` against `pipelinesghubeus*.actions.githubusercontent.com:443` |
+| 2026-05-13 06:40 | Retry errors continue — runners kept retrying but DNS never resolved                                                                         |
+| 2026-05-14 17:23 | DNS fixed manually; all runners reconnected and picked up queued jobs within seconds                                                         |
+
+---
+
+## Root Cause
+
+Proxmox sets the DNS server for LXC containers via the host node configuration and writes it into the container's `/etc/resolv.conf` with a `# --- BEGIN PVE --- / # --- END PVE ---` block.
+
+The Proxmox host node had `10.8.0.1` configured as its DNS server (a WireGuard VPN gateway). This IP was propagated into the LXC container's `/etc/resolv.conf`. The container cannot reach `10.8.0.1` because the WireGuard tunnel does not bridge into the LXC network namespace.
+
+```
+# /etc/resolv.conf (broken state)
+# --- BEGIN PVE ---
+nameserver 10.8.0.1
+# --- END PVE ---
+```
+
+Because `github.com` and `pipelinesghubeus*.actions.githubusercontent.com` could not be resolved, the runner processes received `Resource temporarily unavailable` on every outbound HTTPS connection attempt. The runner services appeared healthy (`active (running)`) but could not pick up any jobs.
+
+---
+
+## Detection
+
+The issue was identified by:
+
+1. Checking runner service status — all 4 services were `active (running)` with no recent log entries (journal showed no entries in the past hour).
+2. Testing outbound HTTPS: `curl https://github.com` returned HTTP `000` (connection failure before TLS handshake).
+3. Running `nslookup github.com` inside the container — DNS timed out against `10.8.0.1`.
+
+---
+
+## Fix Applied
+
+Manually overwrite `/etc/resolv.conf` with reliable public DNS servers:
+
+```bash
+ssh root@192.168.2.101
+printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
+```
+
+All 4 runners reconnected to GitHub within seconds and immediately began processing queued jobs.
+
+---
+
+## Affected Runners
+
+| Service                | Target                            | Status after fix                |
+| ---------------------- | --------------------------------- | ------------------------------- |
+| `proxmox-lxc-runner-0` | `bthek1/github_runner`            | Reconnected, Listening for Jobs |
+| `proxmox-lxc-runner-1` | `bthek1/github_runner`            | Reconnected, Listening for Jobs |
+| `proxmox-lxc-runner-2` | `Recovery-Metrics/RM_DRF_Project` | Reconnected, Listening for Jobs |
+| `proxmox-lxc-runner-3` | `Recovery-Metrics/RM_DRF_Project` | Reconnected, Listening for Jobs |
+
+---
+
+## Prevention
+
+### Option A — Fix Proxmox node DNS (recommended)
+
+Set the Proxmox node's DNS to a server reachable without VPN (e.g., your router or a public resolver). This propagates automatically to all LXC containers.
+
+In Proxmox UI: **Node → DNS → set DNS server to `192.168.2.1` (router) or `1.1.1.1`**.
+
+Or via shell on the Proxmox host:
+
+```bash
+pvesh set /nodes/<node>/dns --dns1 1.1.1.1 --dns2 8.8.8.8
+```
+
+### Option B — Lock DNS in Terraform (current workaround)
+
+The Terraform provisioner already writes a fixed `/etc/resolv.conf` during `terraform apply`:
+
+```hcl
+"printf 'nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf",
+```
+
+This is overridden by Proxmox on container start/restart if the PVE node DNS is misconfigured. To make it permanent, also disable Proxmox's DNS management for this container by adding to `main.tf`:
+
+```hcl
+dns {
+  servers = ["1.1.1.1", "8.8.8.8"]
+}
+```
+
+This sets the DNS via the Proxmox API so the container's `/etc/resolv.conf` is managed by PVE with the correct servers.
+
+### Option C — Monitoring
+
+Add a health check that alerts if `nslookup github.com` fails from the runner container, or monitor the runner services for log entries containing `Runner connect error`.
+
+---
+
+## Notes
+
+- The runner services were `active (running)` throughout the outage — standard `systemctl status` would not reveal the problem.
+- Proxmox silently overwrites `/etc/resolv.conf` on LXC container start using the node's DNS configuration.
+- The WireGuard VPN (`10.8.0.1`) being set as the node DNS is likely a side-effect of a VPN client running on the Proxmox host.
