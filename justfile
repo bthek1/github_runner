@@ -38,7 +38,7 @@ runner-plan:
 	set -euo pipefail
 	source .envrc
 	TOKEN1=$(gh api --method POST -H "Accept: application/vnd.github+json" \
-	    /repos/bthek1/github_runner/actions/runners/registration-token --jq '.token')
+	    /repos/bthek1/proxmox_github_runner/actions/runners/registration-token --jq '.token')
 	TOKEN2=$(gh api --method POST -H "Accept: application/vnd.github+json" \
 	    /repos/Recovery-Metrics/RM_DRF_Project/actions/runners/registration-token --jq '.token')
 	export TF_VAR_github_runner_tokens="${TOKEN1},${TOKEN2}"
@@ -50,7 +50,7 @@ runner-apply:
 	set -euo pipefail
 	source .envrc
 	TOKEN1=$(gh api --method POST -H "Accept: application/vnd.github+json" \
-	    /repos/bthek1/github_runner/actions/runners/registration-token --jq '.token')
+	    /repos/bthek1/proxmox_github_runner/actions/runners/registration-token --jq '.token')
 	TOKEN2=$(gh api --method POST -H "Accept: application/vnd.github+json" \
 	    /repos/Recovery-Metrics/RM_DRF_Project/actions/runners/registration-token --jq '.token')
 	export TF_VAR_github_runner_tokens="${TOKEN1},${TOKEN2}"
@@ -81,7 +81,7 @@ output:
 
 # Check runner status on GitHub for both repos
 runners:
-	gh api /repos/bthek1/github_runner/actions/runners --jq '.runners[] | {name, status}'
+	gh api /repos/bthek1/proxmox_github_runner/actions/runners --jq '.runners[] | {name, status}'
 	gh api /repos/Recovery-Metrics/RM_DRF_Project/actions/runners --jq '.runners[] | {name, status}'
 
 # Check runner systemd services on the container
