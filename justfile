@@ -130,6 +130,22 @@ fmt:
 fmt-check:
 	terraform -chdir={{tf_dir}} fmt -recursive -check
 
+# ── VPN ──────────────────────────────────────────────────────────────────────
+
+# Generate WireGuard keypair and register gh-runner peer on VPN server
+[group('vpn')]
+vpn-peer:
+    cd terraform/wireguard && terraform init -input=false && terraform apply -input=false -auto-approve
+
+# Configure WireGuard on the gh-runner container and clean up workarounds
+[group('vpn')]
+vpn-configure:
+    ansible-playbook -i ansible/inventory.ini ansible/vpn.yml
+
+# Full VPN setup: peer registration then container config
+[group('vpn')]
+vpn-setup: vpn-peer vpn-configure
+
 # ── Convenience ──────────────────────────────────────────────────────────────
 
 # init → validate → plan
