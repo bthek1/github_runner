@@ -40,7 +40,7 @@ Detailed per-resource documentation lives in `Docs/`:
 | SSO Instance | `ssoins-82591beaa0a405e4` |
 | Organization ID | `o-cb9ltcw3me` |
 
-> **EC2:** Current instance is `wireguard-server` (`i-02abf2da13b3858c7`, EIP `3.104.200.207`, running). See [Docs/AWS_info/ec2.md](../../Docs/AWS_info/ec2.md) for up-to-date details. The previously referenced instance `i-0b743f46aa5f97190` has been terminated.
+> **EC2:** See [Docs/AWS_info/ec2.md](../../Docs/AWS_info/ec2.md) for up-to-date instance details.
 
 All AWS CLI commands use `--profile ben-sso`. Always set `AWS_PAGER=""` or pipe to `| cat` to avoid interactive pagers blocking output.
 

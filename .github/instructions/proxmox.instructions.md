@@ -46,13 +46,13 @@ xdg-open https://192.168.2.70:8006
 
 ## Remote Access
 
-This server is on the `192.168.2.0/24` LAN. To access remotely, connect via the WireGuard VPN first:
+This server is on the `192.168.2.0/24` LAN. SSH directly:
 
 ```bash
-just vpn-ssh   # Connect to WireGuard EC2 server
+ssh ben@192.168.2.70
 ```
 
-Then SSH to Proxmox as normal. See [Docs/proxmox.md](../../Docs/AWS_info/proxmox.md) for full details.
+See [Docs/proxmox.md](../../Docs/AWS_info/proxmox.md) for full details.
 
 ## Resource Documentation
 
