@@ -98,8 +98,10 @@ Edit `terraform.tfvars` first (copy from `terraform.tfvars.example`) to set your
 | ----------------------- | ---------------------------------------- | ----------------------------------- |
 | `container_id`          | Proxmox VMID                             | —                                   |
 | `container_hostname`    | Container hostname                       | —                                   |
-| `network_ip`            | Static IP in CIDR or `dhcp`              | `dhcp`                              |
+| `network_ip`            | Static IP in CIDR or `dhcp` (convention: last octet matches the VMID, e.g. VMID `111` → `192.168.2.111/24`) | `dhcp`                              |
 | `network_gateway`       | Default gateway (static only)            | `""`                                |
+| `datastore_id`          | Proxmox storage for the root disk. Live runner uses `nvme4tb-lvm` (4TB NVMe SSD). Changing this **recreates the container** — see AGENTS.md → Storage | `local-lvm`                         |
+| `disk_size`             | Root disk size in GB                     | `8` (live runner: `64`)             |
 | `github_repo_url`       | Full repo URL to register runner against | —                                   |
 | `github_runner_name`    | Display name in GitHub UI                | `proxmox-lxc-runner`                |
 | `github_runner_labels`  | Runner labels list                       | `["self-hosted","linux","proxmox"]` |

@@ -106,12 +106,17 @@ runners:
 # Check runner systemd services on the container
 [group('inspect')]
 runner-services:
-	ssh -i ~/.ssh/id_ed25519 root@192.168.2.101 "systemctl list-units 'actions.runner.*' --no-pager"
+	ssh -i ~/.ssh/id_ed25519 root@192.168.2.111 "systemctl list-units 'actions.runner.*' --no-pager"
+
+# Show the runner's root disk usage and backing Proxmox storage
+[group('inspect')]
+runner-disk:
+	ssh -i ~/.ssh/id_ed25519 root@192.168.2.111 "df -h /"
 
 # SSH into the GitHub runner container
 [group('inspect')]
 ssh:
-	ssh -i ~/.ssh/id_ed25519 root@192.168.2.101
+	ssh -i ~/.ssh/id_ed25519 root@192.168.2.111
 
 # ── Validate / Format ────────────────────────────────────────────────────────
 

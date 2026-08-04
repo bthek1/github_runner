@@ -58,7 +58,7 @@ string via `TF_VAR_github_runner_tokens`:
 source .envrc
 export TF_VAR_github_runner_tokens="$(
   gh api --method POST -H "Accept: application/vnd.github+json" \
-    /repos/bthek1/github_runner/actions/runners/registration-token --jq '.token'
+    /repos/bthek1/proxmox_github_runner/actions/runners/registration-token --jq '.token'
 ),$(
   gh api --method POST -H "Accept: application/vnd.github+json" \
     /repos/Recovery-Metrics/RM_DRF_Project/actions/runners/registration-token --jq '.token'
@@ -74,6 +74,37 @@ Obtain a token from:
 
 To re-register (e.g. after expiry), generate new tokens and run `terraform apply` again —
 the `null_resource` triggers on token change.
+
+---
+
+## Networking convention
+
+- The container's static IP last octet **matches its VMID**. The live runner is
+  VMID `111` at `192.168.2.111/24` (`network_ip` in `terraform.tfvars`). Keep
+  `container_id` and `network_ip` in sync when changing either.
+- Changing `network_ip` updates the container in-place but re-provisions the
+  runners (the `null_resource` connects over SSH to that IP), so generate fresh
+  tokens and apply via `just runner-apply`.
+
+---
+
+## Storage
+
+- The runner's root disk lives on the **4TB NVMe SSD**: `datastore_id = "nvme4tb-lvm"`
+  (LVM-thin on VG `nvme4tb`), 64 GB. It was moved there from `local-lvm`.
+  Live check: `ssh proxmox "sudo cat /etc/pve/lxc/111.conf"` → `rootfs: nvme4tb-lvm:vm-111-disk-0`.
+- `datastore_id` is **ForceNew** in the bpg provider — editing it in
+  `terraform.tfvars` and running `apply` would **destroy and recreate** the
+  container. Move the disk out-of-band instead (Proxmox UI → Resources → Volume
+  Action → Move Storage, or `pct move-volume 111 rootfs <target>`), then
+  reconcile state with a refresh-only apply:
+
+  ```bash
+  terraform -chdir=terraform/lxc apply -refresh-only
+  ```
+
+  Only after that should `terraform.tfvars` be updated to match, so a normal
+  plan comes back clean.
 
 ---
 

@@ -154,7 +154,7 @@ unprivileged    = true
 | `memory_mb` | number | `512` | RAM in MB |
 | `swap_mb` | number | `512` | Swap in MB |
 | `disk_size` | number | `8` | Root disk size in GB |
-| `datastore_id` | string | `"local-lvm"` | Proxmox storage for root disk |
+| `datastore_id` | string | `"local-lvm"` | Proxmox storage for root disk. **ForceNew** — changing it destroys and recreates the container; move the volume out-of-band (`pct move-volume <vmid> rootfs <target>`) and run `terraform apply -refresh-only` instead. This repo's live runner sits on `nvme4tb-lvm`. |
 | `network_bridge` | string | `"vmbr0"` | Bridge for network interface |
 | `network_ip` | string | `"dhcp"` | IPv4 address in CIDR or `"dhcp"` |
 | `network_gateway` | string | `""` | Gateway (required for static IP) |
